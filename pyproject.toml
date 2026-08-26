@@ -1,0 +1,132 @@
+[tool.poetry]
+include = ["LICENSE"]
+packages = [{ include = "djangogeoexporter" }]
+
+[project]
+name = "djangogeoexporter"
+version = "0.1.0"
+description = "A Django module to facilitate exports, particularly map and relational database exports"
+authors = [{ name = "dbWildlife", email = "contact@dbwildlife.info" }]
+license = "AGPL-3.0-only"
+keywords = [
+    "Django",
+    "geopackage",
+    "parquet",
+    "spreadsheet",
+    "excel",
+    "calc",
+    "ods",
+    "odf",
+    "dbchiro",
+    "dbwildlife",
+]
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/dbwildlife/DjGeoExporter"
+Repository = "https://github.com/dbwildlife/DjGeoExporter"
+Documentation = "https://dbchiro.github.io/DjGeoExporter/"
+
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+
+[project.optional-dependencies]
+spreadsheet = ["pandas>=2.2", "openpyxl>=3.1", "odfpy>=1.4.1"]
+parquet = ["pandas>=2.2", "pyarrow>=15", "geopandas>=1.0"]
+gpkg = ["pandas>=2.2", "geopandas>=1.0", "pyogrio>=0.9"]
+all = [
+    "pandas>=2.2",
+    "openpyxl>=3.1",
+    "odfpy>=1.4.1",
+    "pyarrow>=15",
+    "geopandas>=1.0",
+    "pyogrio>=0.9",
+]
+
+
+[tool.poetry.group.dev.dependencies]
+Django = ">=4"
+djangorestframework = ">=3.0,<4.0"
+black = "^26.5.1"
+isort = "~6"
+flake8 = "^7.3.0"
+flake8-isort = "^6.1.2"
+pre-commit = "^4.5.0"
+python-decouple = "^3.8"
+psycopg2-binary = "^2.9.11"
+drf-yasg = "^1.21.11"
+django-fixture-magic = "^0.1.5"
+flake8-pyproject = "^1.2.4"
+pylint = "~3"
+pylint-django = "^2.6.1"
+dj-database-url = "^3.0.1"
+bpython = "^0.26"
+django-extensions = "^4.1"
+django-debug-toolbar = "^6.1.0"
+pygraphviz = "^2.0"
+pyyaml = ">=6"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^9.0.2"
+pytest-django = "^4.11.1"
+coverage = "^7.13.0"
+Django = ">=4"
+djangorestframework = ">=3.0,<4.0"
+python-decouple = "^3.8"
+psycopg2-binary = "^2.9.11"
+drf-yasg = "^1.21.11"
+pyyaml = ">=6"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "~8"
+sphinx-rtd-theme = "^3.0.2"
+rstcheck = "^6.2.5"
+myst-parser = "^4.0.1"
+
+[tool.isort]
+include_trailing_comma = true
+line_length = 79
+multi_line_output = 3
+profile = "black"
+
+[tool.black]
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+  | foo.py           # also separately exclude a file named foo.py in
+                     # the root of the project
+)
+'''
+include = '\.pyi?$'
+line-length = 79
+target-version = ['py312']
+
+
+[tool.flake8]
+ignore = ['E231', 'E241', 'E501']
+per-file-ignores = ['__init__.py:F401']
+max-line-length = 79
+count = true
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings_test"
+testpaths = ["tests"]
+addopts = "--strict-markers"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

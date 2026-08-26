@@ -1,0 +1,70 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        run: pipx install poetry==2.4.1
+      - name: Install dependencies
+        run: poetry install --only main,test
+      - name: Run unit tests
+        run: poetry run pytest tests/test_core.py
+
+  integration:
+    name: Django, writers and PostGIS
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: djangogeoexporter_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d djangogeoexporter_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings_test
+      DBNAME: djangogeoexporter_test
+      DBUSER: postgres
+      DBPASSWORD: postgres
+      DBHOST: localhost
+      DBPORT: 5432
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Install system libraries
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin libgdal-dev
+      - name: Install Poetry
+        run: pipx install poetry==2.4.1
+      - name: Install dependencies and export engines
+        run: poetry install --only main,test -E all
+      - name: Check migrations
+        run: poetry run python manage.py makemigrations --check --dry-run
+      - name: Run test suite with coverage
+        run: poetry run coverage run -m pytest
+      - name: Report coverage
+        run: poetry run coverage report --show-missing --fail-under=75
