@@ -1,8 +1,9 @@
+import json
 from dataclasses import dataclass
 
 import pytest
 
-from djangogeoexporter import ExportDefinition, ExportTable, export
+from djangogeoexporter import ExportDefinition, ExportTable, JSONField, export
 
 
 @dataclass
@@ -37,6 +38,34 @@ def test_tabular_optional_writers(export_format, expected_suffix):
     try:
         assert result.path.suffix == expected_suffix
         assert result.path.stat().st_size > 0
+    finally:
+        result.cleanup()
+
+
+@pytest.mark.parametrize("export_format", ("xlsx", "ods", "parquet"))
+def test_tabular_writers_preserve_json_as_importable_text(export_format):
+    pd = pytest.importorskip("pandas")
+    payload = {"label": "été", "values": [1, True, None]}
+
+    class Definition(ExportDefinition):
+        name = "json_sample"
+        tables = [
+            ExportTable(
+                "rows",
+                [{"id": 1, "payload": payload}],
+                ["id", JSONField("payload")],
+            )
+        ]
+
+    result = export(Definition, format=export_format)
+    try:
+        if export_format == "parquet":
+            frame = pd.read_parquet(result.path)
+        else:
+            frame = pd.read_excel(result.path)
+        exported = frame.loc[0, "payload"]
+        assert isinstance(exported, str)
+        assert json.loads(exported) == payload
     finally:
         result.cleanup()
 

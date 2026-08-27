@@ -1,6 +1,7 @@
 """Core behavior tests that do not require a Django project."""
 
 import csv
+import json
 import zipfile
 from dataclasses import dataclass
 
@@ -11,6 +12,7 @@ from djangogeoexporter import (
     ExportError,
     ExportTable,
     Field,
+    JSONField,
     export,
     supported_formats,
 )
@@ -32,9 +34,13 @@ class Parcel:
 class FakeModelField:
     """Minimal stand-in for the Django field metadata used by the core."""
 
-    def __init__(self, verbose_name, related_model=None):
+    def __init__(self, verbose_name, related_model=None, internal_type=None):
         self.verbose_name = verbose_name
         self.related_model = related_model
+        self.internal_type = internal_type
+
+    def get_internal_type(self):
+        return self.internal_type
 
 
 class FakeMeta:
@@ -72,6 +78,15 @@ ParcelModel._meta = FakeMeta(
 )
 
 
+class MetadataModel:
+    pass
+
+
+MetadataModel._meta = FakeMeta(
+    {"metadata": FakeModelField("Metadata", internal_type="JSONField")}
+)
+
+
 def test_flat_csv():
     rows = [Commune(1, "Paris"), Commune(2, "Lyon")]
 
@@ -89,6 +104,57 @@ def test_flat_csv():
         ]
     finally:
         result.cleanup()
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (
+            {"species": "Sérotine", "count": 2},
+            '{"species":"Sérotine","count":2}',
+        ),
+        ([1, True, None], "[1,true,null]"),
+        ("text", '"text"'),
+        (None, "null"),
+    ],
+)
+def test_json_field_csv_is_python_and_postgresql_compatible(value, expected):
+    class Definition(ExportDefinition):
+        name = "json_values"
+        tables = [
+            ExportTable(
+                "values",
+                [{"id": 1, "payload": value}],
+                ["id", JSONField("payload")],
+            )
+        ]
+
+    result = export(Definition, format="csv")
+    try:
+        with result.path.open(encoding="utf-8-sig", newline="") as file_handle:
+            exported = next(csv.DictReader(file_handle))["payload"]
+        assert exported == expected
+        assert json.loads(exported) == value
+    finally:
+        result.cleanup()
+
+
+def test_json_field_rejects_non_standard_postgresql_numbers():
+    table = ExportTable("values", [{"payload": float("nan")}], [JSONField("payload")])
+
+    with pytest.raises(ValueError, match="Out of range float values"):
+        list(table.export_rows({}))
+
+
+def test_django_json_field_is_detected_automatically():
+    table = ExportTable(
+        "values",
+        [{"metadata": {"nested": [1, None]}}],
+        ["metadata"],
+        model=MetadataModel,
+    )
+
+    assert list(table.export_rows({})) == [{"metadata": '{"nested":[1,null]}'}]
 
 
 def test_explicit_labels_are_exported():

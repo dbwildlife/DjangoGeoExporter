@@ -7,6 +7,7 @@ from .core import (
     ExportTable,
     Field,
     GeometryField,
+    JSONField,
     MissingDependencyError,
 )
 from .service import export, supported_formats
@@ -18,6 +19,7 @@ __all__ = [
     "ExportTable",
     "Field",
     "GeometryField",
+    "JSONField",
     "MissingDependencyError",
     "export",
     "supported_formats",

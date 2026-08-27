@@ -7,6 +7,7 @@ Django runtime.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -49,6 +50,16 @@ class GeometryField(Field):
 
     Geometry values are handled like regular fields until a spatial writer
     converts them to Shapely/GeoPandas objects.
+    """
+
+
+@dataclass(frozen=True)
+class JSONField(Field):
+    """Marker for a field whose value must be exported as JSON text.
+
+    Use this class for dictionaries, lists and JSON scalar values coming from
+    plain Python iterables. Django model ``JSONField`` columns are detected
+    automatically, so they do not need to be declared explicitly.
     """
 
 
@@ -168,8 +179,32 @@ class ExportTable:
         """Yield rows keyed by their final user-facing column labels."""
         fields = self.normalized_fields()
         labels = self.column_labels(context)
+        model = self.resolve_model(context)
         for row in self.rows(context):
-            yield {label: row[field.name] for field, label in zip(fields, labels)}
+            yield {
+                label: serialize_json(row[field.name])
+                if self._is_json_field(field, model)
+                else row[field.name]
+                for field, label in zip(fields, labels)
+            }
+
+    @staticmethod
+    def _is_json_field(export_field: Field, model: type | None) -> bool:
+        """Return whether a configured field represents Django JSON data."""
+        if isinstance(export_field, JSONField):
+            return True
+        source = (
+            export_field.source
+            if export_field.source is not None
+            else export_field.name
+        )
+        if model is None or not isinstance(source, str):
+            return False
+        model_field = resolve_model_field(model, source)
+        if model_field is None:
+            return False
+        get_internal_type = getattr(model_field, "get_internal_type", None)
+        return callable(get_internal_type) and get_internal_type() == "JSONField"
 
     def _field_label(self, export_field: Field, model: type | None) -> str:
         """Resolve a field label according to the documented precedence."""
@@ -284,6 +319,41 @@ def resolve_verbose_name(model: type, source_path: str) -> str | None:
             return None
 
     return None
+
+
+def resolve_model_field(model: type, source_path: str) -> Any | None:
+    """Resolve the terminal Django model field for a ``__`` source path."""
+    current_model: type | None = model
+    parts = source_path.split("__")
+    for index, part in enumerate(parts):
+        model_meta = getattr(current_model, "_meta", None)
+        if model_meta is None or not hasattr(model_meta, "get_field"):
+            return None
+        try:
+            model_field = model_meta.get_field(part)
+        except Exception:
+            return None
+        if index == len(parts) - 1:
+            return model_field
+        current_model = getattr(model_field, "related_model", None)
+        if current_model is None:
+            return None
+    return None
+
+
+def serialize_json(value: Any) -> str:
+    """Return strict UTF-8 JSON accepted by Python and PostgreSQL.
+
+    ``allow_nan=False`` is intentional: PostgreSQL JSON rejects the JavaScript
+    spellings ``NaN`` and ``Infinity`` even though Python's encoder otherwise
+    emits them by default.
+    """
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+    )
 
 
 def temp_path(suffix: str) -> Path:
