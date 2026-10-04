@@ -15,6 +15,7 @@ class WriterRegistry:
 
     def register(self, *names: str):
         """Decorator registering a writer class under the supplied aliases."""
+
         def decorator(writer_cls: type):
             for name in names:
                 self._writers[name.lower()] = writer_cls
@@ -28,7 +29,9 @@ class WriterRegistry:
             writer_cls = self._writers[format_name.lower()]
         except KeyError as exc:
             supported = ", ".join(sorted(self._writers))
-            raise ExportError(f"Unsupported export format {format_name!r}. Supported: {supported}") from exc
+            raise ExportError(
+                f"Unsupported export format {format_name!r}. Supported: {supported}"
+            ) from exc
         return writer_cls(**options)
 
     def formats(self) -> tuple[str, ...]:

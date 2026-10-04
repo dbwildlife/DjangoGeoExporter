@@ -1,13 +1,14 @@
-isort:
-	poetry run isort djangogeoexporter config
+.PHONY: lint format check pylint test build-docs graph-models docs
 
-black:
-	poetry run black djangogeoexporter config
+lint:
+	poetry run ruff check djangogeoexporter config
 
-flake8:
-	poetry run flake8 djangogeoexporter config
+format:
+	poetry run ruff check --select I --fix djangogeoexporter config
+	poetry run ruff format djangogeoexporter config
 
-check: isort black flake8
+check: lint
+	poetry run ruff format --check djangogeoexporter config
 
 pylint:
 	poetry run pylint --load-plugins pylint_django --django-settings-module=config.settings djangogeoexporter config

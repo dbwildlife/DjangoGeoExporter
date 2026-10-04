@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from .core import ExportDefinition, ExportResult
-from .registry import registry
 # Importing built-in writers registers them in the global writer registry.
 from . import writers as _writers  # noqa: F401
+from .core import ExportDefinition, ExportResult
+from .registry import registry
 
 
 def export(

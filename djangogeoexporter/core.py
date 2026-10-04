@@ -13,7 +13,6 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Iterable, Iterator, Mapping, Sequence
 
-
 MISSING = object()
 
 
@@ -107,7 +106,9 @@ class ExportTable:
         """Return all configured fields as ``Field`` instances."""
         if isinstance(self.fields, Mapping):
             return [
-                GeometryField(name, source) if name == self.geometry_field else Field(name, source)
+                GeometryField(name, source)
+                if name == self.geometry_field
+                else Field(name, source)
                 for name, source in self.fields.items()
             ]
 
@@ -122,7 +123,11 @@ class ExportTable:
 
     def source(self, context: Mapping[str, Any]) -> Iterable[Any]:
         """Resolve the configured iterable/QuerySet for an export context."""
-        return self.queryset(context) if callable(self.queryset) else self.queryset
+        return (
+            self.queryset(context)
+            if callable(self.queryset)
+            else self.queryset
+        )
 
     def resolve_model(self, context: Mapping[str, Any]) -> type | None:
         """Return the Django model used for metadata lookup when available.
@@ -142,11 +147,18 @@ class ExportTable:
         DataFrames cannot reliably preserve a one-to-one mapping otherwise.
         """
         model = self.resolve_model(context) if self.use_verbose_names else None
-        labels = [self._field_label(field, model) for field in self.normalized_fields()]
-        duplicates = sorted({label for label in labels if labels.count(label) > 1})
+        labels = [
+            self._field_label(field, model)
+            for field in self.normalized_fields()
+        ]
+        duplicates = sorted(
+            {label for label in labels if labels.count(label) > 1}
+        )
         if duplicates:
             joined = ", ".join(repr(label) for label in duplicates)
-            raise ExportError(f"Duplicate export column label(s) in table {self.name!r}: {joined}")
+            raise ExportError(
+                f"Duplicate export column label(s) in table {self.name!r}: {joined}"
+            )
         return labels
 
     def geometry_label(self, context: Mapping[str, Any]) -> str | None:
@@ -175,7 +187,9 @@ class ExportTable:
         for item in source:
             yield {column.name: column.resolve(item) for column in fields}
 
-    def export_rows(self, context: Mapping[str, Any]) -> Iterator[dict[str, Any]]:
+    def export_rows(
+        self, context: Mapping[str, Any]
+    ) -> Iterator[dict[str, Any]]:
         """Yield rows keyed by their final user-facing column labels."""
         fields = self.normalized_fields()
         labels = self.column_labels(context)
@@ -204,7 +218,9 @@ class ExportTable:
         if model_field is None:
             return False
         get_internal_type = getattr(model_field, "get_internal_type", None)
-        return callable(get_internal_type) and get_internal_type() == "JSONField"
+        return (
+            callable(get_internal_type) and get_internal_type() == "JSONField"
+        )
 
     def _field_label(self, export_field: Field, model: type | None) -> str:
         """Resolve a field label according to the documented precedence."""
@@ -212,7 +228,11 @@ class ExportTable:
             return str(export_field.label)
 
         if model is not None:
-            source = export_field.source if export_field.source is not None else export_field.name
+            source = (
+                export_field.source
+                if export_field.source is not None
+                else export_field.name
+            )
             if isinstance(source, str):
                 verbose_name = resolve_verbose_name(model, source)
                 if verbose_name:

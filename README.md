@@ -92,3 +92,15 @@ them as JSON/JSONB.
 
 See the [`docs/`](docs/) directory for configuration, dynamic export contexts,
 field labels, Django response integration, and format-specific options.
+
+## Code quality
+
+Install development dependencies with `poetry install --with dev`. Ruff handles
+linting, import sorting, and formatting, using a line length of 79 characters.
+
+- `make lint`: run lint checks.
+- `make format`: sort imports and format Python code.
+- `make check`: check linting and formatting without modifying files.
+
+Run `poetry run pre-commit install` to enable the Ruff hooks before commits.
+For VS Code, install the Ruff extension (`charliermarsh.ruff`).
