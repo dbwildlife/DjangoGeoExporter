@@ -98,6 +98,17 @@ field labels, Django response integration, and format-specific options.
 Install development dependencies with `poetry install --with dev`. Ruff handles
 linting, import sorting, and formatting, using a line length of 79 characters.
 
+To test all export formats, install the optional dependencies as well:
+
+```bash
+poetry install --with test -E all
+poetry run pytest
+```
+
+Without the extras, tests requiring optional export dependencies are skipped.
+Django integration tests also require a running PostgreSQL/PostGIS database
+configured through `config.settings_test`.
+
 - `make lint`: run lint checks.
 - `make format`: sort imports and format Python code.
 - `make check`: check linting and formatting without modifying files.

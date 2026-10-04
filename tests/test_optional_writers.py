@@ -6,6 +6,17 @@ import pytest
 from djangogeoexporter import ExportDefinition, ExportTable, JSONField, export
 
 
+@pytest.fixture
+def optional_writer_dependencies(export_format):
+    dependencies = {
+        "xlsx": ("pandas", "openpyxl"),
+        "ods": ("pandas", "odf"),
+        "parquet": ("pandas", "pyarrow"),
+    }
+    for module in dependencies[export_format]:
+        pytest.importorskip(module)
+
+
 @dataclass
 class Row:
     id: int
@@ -33,7 +44,9 @@ def definition(fields=("id", "name"), *, geometry_field=None):
     ("export_format", "expected_suffix"),
     (("xlsx", ".xlsx"), ("ods", ".ods"), ("parquet", ".parquet")),
 )
-def test_tabular_optional_writers(export_format, expected_suffix):
+def test_tabular_optional_writers(
+    export_format, expected_suffix, optional_writer_dependencies
+):
     result = export(definition(), format=export_format)
     try:
         assert result.path.suffix == expected_suffix
@@ -43,7 +56,9 @@ def test_tabular_optional_writers(export_format, expected_suffix):
 
 
 @pytest.mark.parametrize("export_format", ("xlsx", "ods", "parquet"))
-def test_tabular_writers_preserve_json_as_importable_text(export_format):
+def test_tabular_writers_preserve_json_as_importable_text(
+    export_format, optional_writer_dependencies
+):
     pd = pytest.importorskip("pandas")
     payload = {"label": "été", "values": [1, True, None]}
 
@@ -71,6 +86,8 @@ def test_tabular_writers_preserve_json_as_importable_text(export_format):
 
 
 def test_geopackage_writer_preserves_geometry():
+    pytest.importorskip("pandas")
+    pytest.importorskip("geopandas")
     shapely = pytest.importorskip("shapely.geometry")
     pyogrio = pytest.importorskip("pyogrio")
 
