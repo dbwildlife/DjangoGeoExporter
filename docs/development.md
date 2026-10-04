@@ -52,3 +52,8 @@ warnings:
 ```bash
 poetry run sphinx-build -n -W --keep-going -b html docs docs/_build/html
 ```
+
+The Documentation workflow builds and publishes the documentation to GitHub
+Pages on every push to `main`. It can also be triggered manually from the
+Actions tab. In the repository settings, select **Settings > Pages > Build
+and deployment > Source > GitHub Actions** to enable deployment.
