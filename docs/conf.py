@@ -17,9 +17,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Django exporter'
-copyright = '2021, dbChiro project <project@dbchiro.org>'
-author = 'dbChiro project <project@dbchiro.org>'
+project = 'DjangoGeoExporter'
+copyright = 'dbWildlife'
+author = 'dbWildlife'
 
 # The full version, including alpha/beta/rc tags
 release = '0.1.0'
@@ -42,7 +42,7 @@ extensions = [
     # "sphinx_copybutton",
     "sphinx_rtd_theme",
 ]
-source_suffix = {".md": "markdown", ".rst": "restructuredtext"}
+source_suffix = {".md": "markdown"}
 
 # The master toctree document.
 master_doc = "index"
@@ -91,4 +91,4 @@ myst_enable_extensions = [
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = []

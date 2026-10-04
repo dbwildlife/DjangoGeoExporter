@@ -11,7 +11,7 @@ Install the package with the features required by your project:
 poetry add "djangogeoexporter[all]"
 ```
 
-Available extras are `spreadsheet` (XLSX and ODS), `parquet`, `geo`
+Available extras are `spreadsheet` (XLSX and ODS), `parquet`, `gpkg`
 (GeoPackage), and `all`. With pip, use the equivalent command:
 
 ```bash

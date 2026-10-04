@@ -1,4 +1,4 @@
-.PHONY: lint format check pylint test build-docs graph-models docs
+.PHONY: lint format check pylint test build-docs docs
 
 lint:
 	poetry run ruff check djangogeoexporter config
@@ -19,7 +19,4 @@ test:
 build-docs:
 	cd docs && poetry run make html
 
-graph-models:
-	poetry run python -m manage graph_models -g --language fr --output models.png  sinp_nomenclatures
-
-docs: build-docs graph-models
+docs: build-docs
